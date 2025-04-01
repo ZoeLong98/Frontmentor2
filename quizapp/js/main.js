@@ -1,61 +1,35 @@
 import { ButtonOption } from "../components/ButtonOption.js";
 import { startquiz } from "./quiz.js";
 
-let quizProgress = JSON.parse(localStorage.getItem("quizProgress"));
 let icons = {};
-let questions = JSON.parse(sessionStorage.getItem("questions")); // 先检查缓存
+let quizProgress;
+let questions;
+let questionsByCategory;
 
-if (!quizProgress) {
-  quizProgress = {
-    currentCategory: "",
-    currentQuestionIndex: 0,
-    correctAnswers: 0,
-    history: {
-      HTML: 0,
-      JavaScript: 0,
-      CSS: 0,
-      Accessibility: 0,
-    },
-  };
-  localStorage.setItem("quizProgress", JSON.stringify(quizProgress));
-} else {
-  console.log("Loaded quizProgress from localStorage:", quizProgress);
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOM fully loaded and parsed");
-
-  await loadIcons(); // 先加载 SVG 图标
-  await loadQuestions(); // 加载问题数据
-
-  if (quizProgress.currentCategory === "") {
-    setupButtons();
-  } // 设置按钮
-  else {
-    checkQuizProgress();
-  }
-  // 检查是否需要恢复进度
-});
-
-// **检查并恢复 Quiz 进度**
-function checkQuizProgress() {
-  if (quizProgress.currentCategory !== "") {
-    console.log("恢复上次的进度:", quizProgress);
-    const questionsByCategory = questions.quizzes.find(
-      (quiz) => quiz.title === quizProgress.currentCategory
-    );
-    // 隐藏欢迎界面
-    document.getElementById("welcome").style.display = "none";
-    document.getElementById("main-menu").style.display = "none";
-    document.getElementById("question").style.display = "block";
-    document.getElementById("question-options").style.display = "flex";
-
-    startquiz(questionsByCategory, quizProgress, icons);
+function loadLocalStorage() {
+  quizProgress = JSON.parse(localStorage.getItem("quizProgress"));
+  if (!quizProgress) {
+    quizProgress = {
+      currentCategory: "",
+      currentQuestionIndex: 0,
+      correctAnswers: 0,
+      history: {
+        HTML: 0,
+        JavaScript: 0,
+        CSS: 0,
+        Accessibility: 0,
+      },
+    };
+    localStorage.setItem("quizProgress", JSON.stringify(quizProgress));
+  } else {
+    console.log("Loaded quizProgress from localStorage:", quizProgress);
   }
 }
+loadLocalStorage();
 
-// **加载问题数据**
+// load questions
 async function loadQuestions() {
+  questions = JSON.parse(sessionStorage.getItem("questions"));
   if (!questions) {
     try {
       const response = await fetch("./data.json");
@@ -115,7 +89,7 @@ function handleCategoryChange(event) {
   quizProgress.currentCategory = category;
   localStorage.setItem("quizProgress", JSON.stringify(quizProgress));
 
-  const questionsByCategory = questions.quizzes.find(
+  questionsByCategory = questions.quizzes.find(
     (quiz) => quiz.title === category
   );
   if (!questionsByCategory) {
@@ -153,3 +127,39 @@ async function loadIcons() {
     console.error("加载 SVG 失败:", error);
   }
 }
+
+async function loadFirstPage() {
+  await loadIcons(); // 先加载 SVG 图标
+  await loadQuestions(); // 加载问题数据
+
+  if (quizProgress.currentCategory === "") {
+    setupButtons();
+  } // 设置按钮
+  else {
+    checkQuizProgress();
+  }
+}
+
+// **检查并恢复 Quiz 进度**
+function checkQuizProgress() {
+  if (quizProgress.currentCategory !== "") {
+    console.log("恢复上次的进度:", quizProgress);
+    questionsByCategory = questions.quizzes.find(
+      (quiz) => quiz.title === quizProgress.currentCategory
+    );
+    // 隐藏欢迎界面
+    document.getElementById("welcome").style.display = "none";
+    document.getElementById("main-menu").style.display = "none";
+    document.getElementById("question").style.display = "block";
+    document.getElementById("question-options").style.display = "flex";
+
+    startquiz(questionsByCategory, quizProgress, icons);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("DOM fully loaded and parsed");
+  loadFirstPage();
+});
+
+export { questionsByCategory, quizProgress };

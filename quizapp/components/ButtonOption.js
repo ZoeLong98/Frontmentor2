@@ -11,6 +11,7 @@ export class ButtonOption {
     this.element.classList.add("btn");
 
     const optionSpan = document.createElement("span");
+    optionSpan.id = "span1";
     optionSpan.style.backgroundColor = this.bgColor;
     optionSpan.classList.add("TextPreset4");
     optionSpan.classList.add("btn-icon");
